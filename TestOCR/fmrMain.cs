@@ -1,5 +1,12 @@
 using System.Text;
 using Newtonsoft.Json.Linq;
+using OpenCvSharp;
+using Local_OpenCvSharp.Extensions;
+using Sdcb.PaddleInference;
+using Sdcb.PaddleOCR.Models.Local;
+using Sdcb.PaddleOCR.Models;
+using Sdcb.PaddleOCR;
+using System.Windows.Forms;
 
 namespace TestOCR
 {
@@ -17,7 +24,7 @@ namespace TestOCR
 
         private async void button1_Click(object sender, EventArgs e)
         {
-            await PostTest();
+            await PostTest2();
         }
 
         public async Task PostTest()
@@ -51,23 +58,80 @@ namespace TestOCR
             pictureBox1.ImageLocation = outputImagePath;
         }
 
+        public async Task PostTest2()
+        {
+            FullOcrModel model = LocalFullModels.EnglishV4;
+
+            byte[] sampleImageData;
+            //string sampleImageUrl = @"https://www.tp-link.com.cn/content/images2017/gallery/4288_1920.jpg";
+            //using (HttpClient http = new HttpClient())
+            //{
+            //    Console.WriteLine("Download sample image from: " + sampleImageUrl);
+            //    await http.GetByteArrayAsync(sampleImageUrl);
+            //}
+
+            //sampleImageData = File.ReadAllBytes(imagePath);
+
+            using (PaddleOcrAll all = new PaddleOcrAll(model, PaddleDevice.Mkldnn())
+            {
+                AllowRotateDetection = true,
+                Enable180Classification = false,
+            })
+            {
+                // Load local file by following code:
+                using (Mat src = Cv2.ImRead(imagePath))
+                //                using (Mat src = Cv2.ImDecode(sampleImageData, ImreadModes.Color))
+                {
+
+                    // If the images really have too much resolution, you can do something like this.
+                    // It speeds up the OCR process considerably. 
+                    Cv2.Resize(src, src, new OpenCvSharp.Size(src.Width * .05, src.Height * .05));
+
+                    //// Set the image to be the resized image
+                    pictureBox1.Image = src.ToBitmap();
+
+
+                    // This will start to fail with a message that says System.MissingFieldException (having to do with OpenCvSharp.Size.Zero)
+                    // if you install the OpenCVSharp4Extensions package V 4.10.0.20241108.
+                    PaddleOcrResult result = all.Run(src);
+
+                    Console.WriteLine("Detected all texts: \n" + result.Text);
+
+                    if (result.Regions.Count() == 1)
+                    {
+                        PaddleOcrResultRegion region = result.Regions[0];
+                        txtResults.Text = region.Text;
+                        txtScore.Text = region.Score.ToString("0.0000");
+                    }
+
+                    foreach (PaddleOcrResultRegion region in result.Regions)
+                    {
+                        Console.WriteLine($"Text: {region.Text}, Score: {region.Score}, RectCenter: {region.Rect.Center}, RectSize:    {region.Rect.Size}, Angle: {region.Rect.Angle}");
+                    }
+                }
+            }
+        }
+
+
+
         private void btnSelectFile_Click(object sender, EventArgs e)
         {
+
+            ClearOutput();
+
             // Use file selection dialog to select jpg image
             OpenFileDialog openFileDialog = new OpenFileDialog();
-            openFileDialog.Filter = "Image files (*.jpg)|*.jpg";
+            openFileDialog.Filter = "JPG files (*.jpg)|*.jpg";
             openFileDialog.InitialDirectory = "c:/Users/ed/Downloads";
             if (openFileDialog.ShowDialog() == DialogResult.OK)
             {
                 imagePath = openFileDialog.FileName;
                 txtImagePath.Text = imagePath;
                 outputImagePath = Path.Combine(Path.GetDirectoryName(imagePath), string.Format("output_{0}.jpg", DateTime.Now.ToString("yyMMdd_HHmmss")));
+
+                // Show the selected image in the picture box
+                pictureBox1.ImageLocation = imagePath;
             }
-
-            // Show the selected image in the picture box
-            pictureBox1.ImageLocation = imagePath;
-
-            ClearOutput();
 
         }
 
