@@ -6,7 +6,9 @@ using Sdcb.PaddleInference;
 using Sdcb.PaddleOCR.Models.Local;
 using Sdcb.PaddleOCR.Models;
 using Sdcb.PaddleOCR;
+using Sdcb.RotationDetector;
 using System.Windows.Forms;
+using static System.ComponentModel.Design.ObjectSelectorEditor;
 
 namespace TestOCR
 {
@@ -55,7 +57,7 @@ namespace TestOCR
             txtResults.Text = jsonResponse["result"]["texts"][0]["text"].ToString();
             txtScore.Text = jsonResponse["result"]["texts"][0]["score"].ToString();
 
-            pictureBox1.ImageLocation = outputImagePath;
+            imageBox.Image = Bitmap.FromFile(outputImagePath);
         }
 
         public async Task PostTest2()
@@ -79,37 +81,68 @@ namespace TestOCR
             })
             {
                 // Load local file by following code:
-                using (Mat src = Cv2.ImRead(imagePath))
+                Mat src = Cv2.ImRead(imagePath);
                 //                using (Mat src = Cv2.ImDecode(sampleImageData, ImreadModes.Color))
+
+
+                // If the images really have too much resolution, you can do something like this.
+                // It speeds up the OCR process considerably. 
+                Cv2.Resize(src, src, new OpenCvSharp.Size(src.Width * .05, src.Height * .05));
+
+                Cv2.CvtColor(src, src, ColorConversionCodes.BGRA2GRAY);
+                //Cv2.Threshold(src, src, 50, 255, ThresholdTypes.Otsu);
+
+                //if (cbxRotationDetection.Checked)
+                //{
+                //    using PaddleRotationDetector detector = new PaddleRotationDetector(RotationDetectionModel.EmbeddedDefault);
+                //    {
+                //        // If you want to detect the rotation of the image, you can use the following code.
+                //        // In testing, this code is not very reliable. It wouldn't detect the correct rotation of the image.
+                //        // It was so bad that it'd probably be better to rotate the image 4x and just find the OCR with the 
+                //        // highest score.
+                //        RotationResult r = detector.Run(src);
+
+                //        //// Rotate the image based on the detected rotation
+                //        //switch (r.Rotation)
+                //        //{
+                //        //    case RotationDegree._90:
+                //        //        src = src.Rotate(90);
+                //        //        break;
+                //        //    case RotationDegree._180:
+                //        //        src = src.Rotate(180);
+                //        //        break;
+                //        //    case RotationDegree._270:
+                //        //        src = src.Rotate(90);
+                //        //        break;
+                //        //}
+                //        Console.WriteLine(r.Rotation);
+                //    }
+                //}
+
+
+                //// Set the image to be the resized image
+                imageBox.Image = src.ToBitmap();
+
+
+                // This will start to fail with a message that says System.MissingFieldException (having to do with OpenCvSharp.Size.Zero)
+                // if you install the OpenCVSharp4Extensions package V 4.10.0.20241108.
+                PaddleOcrResult result = all.Run(src);
+
+                Console.WriteLine("Detected all texts: \n" + result.Text);
+
+                if (result.Regions.Count() == 1)
                 {
+                    PaddleOcrResultRegion region = result.Regions[0];
+                    txtResults.Text = region.Text;
+                    txtScore.Text = region.Score.ToString("0.0000");
+                }
 
-                    // If the images really have too much resolution, you can do something like this.
-                    // It speeds up the OCR process considerably. 
-                    Cv2.Resize(src, src, new OpenCvSharp.Size(src.Width * .05, src.Height * .05));
-
-                    //// Set the image to be the resized image
-                    pictureBox1.Image = src.ToBitmap();
-
-
-                    // This will start to fail with a message that says System.MissingFieldException (having to do with OpenCvSharp.Size.Zero)
-                    // if you install the OpenCVSharp4Extensions package V 4.10.0.20241108.
-                    PaddleOcrResult result = all.Run(src);
-
-                    Console.WriteLine("Detected all texts: \n" + result.Text);
-
-                    if (result.Regions.Count() == 1)
-                    {
-                        PaddleOcrResultRegion region = result.Regions[0];
-                        txtResults.Text = region.Text;
-                        txtScore.Text = region.Score.ToString("0.0000");
-                    }
-
-                    foreach (PaddleOcrResultRegion region in result.Regions)
-                    {
-                        Console.WriteLine($"Text: {region.Text}, Score: {region.Score}, RectCenter: {region.Rect.Center}, RectSize:    {region.Rect.Size}, Angle: {region.Rect.Angle}");
-                    }
+                foreach (PaddleOcrResultRegion region in result.Regions)
+                {
+                    Console.WriteLine($"Text: {region.Text}, Score: {region.Score}, RectCenter: {region.Rect.Center}, RectSize:    {region.Rect.Size}, Angle: {region.Rect.Angle}");
                 }
             }
+
         }
 
 
@@ -130,7 +163,7 @@ namespace TestOCR
                 outputImagePath = Path.Combine(Path.GetDirectoryName(imagePath), string.Format("output_{0}.jpg", DateTime.Now.ToString("yyMMdd_HHmmss")));
 
                 // Show the selected image in the picture box
-                pictureBox1.ImageLocation = imagePath;
+                imageBox.Image  = Bitmap.FromFile(imagePath);
             }
 
         }

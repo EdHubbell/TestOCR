@@ -33,9 +33,8 @@
             txtScore = new TextBox();
             btnSelectFile = new Button();
             txtImagePath = new TextBox();
-            pictureBox1 = new PictureBox();
             cbxRotationDetection = new CheckBox();
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).BeginInit();
+            imageBox = new Cyotek.Windows.Forms.ImageBox();
             SuspendLayout();
             // 
             // btnRunOCR
@@ -89,16 +88,6 @@
             txtImagePath.Size = new Size(717, 31);
             txtImagePath.TabIndex = 4;
             // 
-            // pictureBox1
-            // 
-            pictureBox1.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
-            pictureBox1.Location = new Point(17, 20);
-            pictureBox1.Margin = new Padding(4, 5, 4, 5);
-            pictureBox1.Name = "pictureBox1";
-            pictureBox1.Size = new Size(906, 475);
-            pictureBox1.TabIndex = 5;
-            pictureBox1.TabStop = false;
-            // 
             // cbxRotationDetection
             // 
             cbxRotationDetection.Checked = true;
@@ -109,14 +98,23 @@
             cbxRotationDetection.TabIndex = 6;
             cbxRotationDetection.Text = "Enable Rotation Detection";
             cbxRotationDetection.UseVisualStyleBackColor = true;
+            cbxRotationDetection.Visible = false;
+            // 
+            // imageBox
+            // 
+            imageBox.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
+            imageBox.Location = new Point(12, 12);
+            imageBox.Name = "imageBox";
+            imageBox.Size = new Size(909, 485);
+            imageBox.TabIndex = 7;
             // 
             // fmrMain
             // 
             AutoScaleDimensions = new SizeF(10F, 25F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(943, 697);
+            Controls.Add(imageBox);
             Controls.Add(cbxRotationDetection);
-            Controls.Add(pictureBox1);
             Controls.Add(txtImagePath);
             Controls.Add(btnSelectFile);
             Controls.Add(txtScore);
@@ -125,7 +123,6 @@
             Margin = new Padding(4, 5, 4, 5);
             Name = "fmrMain";
             Text = "Test OCR";
-            ((System.ComponentModel.ISupportInitialize)pictureBox1).EndInit();
             ResumeLayout(false);
             PerformLayout();
         }
@@ -137,7 +134,7 @@
         private TextBox txtScore;
         private Button btnSelectFile;
         private TextBox txtImagePath;
-        private PictureBox pictureBox1;
         private CheckBox cbxRotationDetection;
+        private Cyotek.Windows.Forms.ImageBox imageBox;
     }
 }
